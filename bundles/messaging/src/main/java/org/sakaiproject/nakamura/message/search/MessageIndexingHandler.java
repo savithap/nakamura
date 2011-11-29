@@ -93,8 +93,6 @@ public class MessageIndexingHandler implements IndexingHandler, ImmediateIndexin
     propBuilder.put("sakai:initialpost", "initialpost");
     propBuilder.put(PROP_SAKAI_SUBJECT, "title");
     propBuilder.put(PROP_SAKAI_BODY, "content");
-    propBuilder.put("sakai:firstName", "firstName");
-    propBuilder.put("sakai:lastName", "lastName");
     WHITELISTED_PROPS = propBuilder.build();
   }
 
