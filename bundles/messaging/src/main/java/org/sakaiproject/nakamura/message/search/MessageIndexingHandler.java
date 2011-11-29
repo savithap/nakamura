@@ -93,6 +93,8 @@ public class MessageIndexingHandler implements IndexingHandler, ImmediateIndexin
     propBuilder.put("sakai:initialpost", "initialpost");
     propBuilder.put(PROP_SAKAI_SUBJECT, "title");
     propBuilder.put(PROP_SAKAI_BODY, "content");
+    propBuilder.put("sakai:firstName", "firstName");
+    propBuilder.put("sakai:lastName", "lastName");
     WHITELISTED_PROPS = propBuilder.build();
   }
 
@@ -192,6 +194,13 @@ public class MessageIndexingHandler implements IndexingHandler, ImmediateIndexin
               } else {
                 doc.setField("type", "u");
               }
+              
+              //index sender's first and last name
+              String senderAuthId = (String)content.getProperty("sakai:from");
+              Authorizable senderAuth = am.findAuthorizable(senderAuthId);
+              doc.addField("firstName", senderAuth.getProperty("firstName"));
+              doc.addField("lastName", senderAuth.getProperty("lastName"));
+
               doc.addField(IndexingHandler._DOC_SOURCE_OBJECT, content);
 
               // set the path here so that it's the first path found when rendering to the
