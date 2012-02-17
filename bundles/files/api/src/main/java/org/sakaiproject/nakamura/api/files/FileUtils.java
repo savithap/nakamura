@@ -56,6 +56,7 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+
 /**
  * Some utility function regarding file management.
  */
@@ -249,6 +250,35 @@ public class FileUtils {
     write.value(StorageClientUtils.toLong(content.getProperty(Content.LENGTH_FIELD)));
     write.endObject();
   }
+  
+  public static void writeFileNode(Content content,
+      org.sakaiproject.nakamura.api.lite.Session session, JSONWriter write, int maxDepth, boolean objectInProgress)
+          throws JSONException, StorageClientException {
+    if (content == null) {
+      log.warn("Can't output null content.");
+      return;
+    }
+
+    if (!objectInProgress){
+      write.object();
+    }
+    // dump all the properties.
+    ExtendedJSONWriter.writeContentTreeToWriter(write, content, objectInProgress, maxDepth);
+    // The permissions for this session.
+    writePermissions(content, session, write);
+
+    write.key(JcrConstants.JCR_LASTMODIFIED);
+    Calendar cal = new GregorianCalendar();
+    cal.setTimeInMillis(StorageClientUtils.toLong(content.getProperty(Content.LASTMODIFIED_FIELD)));
+    write.value(DateUtils.iso8601(cal));
+    write.key(JcrConstants.JCR_MIMETYPE);
+    write.value(content.getProperty(Content.MIMETYPE_FIELD));
+    write.key(JcrConstants.JCR_DATA);
+    write.value(StorageClientUtils.toLong(content.getProperty(Content.LENGTH_FIELD)));
+    if (!objectInProgress){
+      write.endObject();
+    }
+  }
 
   /**
    * Writes all the properties for a linked node.
@@ -282,6 +312,37 @@ public class FileUtils {
   }
 
   public static void writeLinkNode(Content content,
+      org.sakaiproject.nakamura.api.lite.Session session, JSONWriter writer, boolean objectInProgress)
+          throws StorageClientException, JSONException {
+    
+    if (!objectInProgress){
+      writer.object();
+    }
+    ContentManager contentManager = session.getContentManager();
+
+    // Write all the properties.
+    ExtendedJSONWriter.writeNodeContentsToWriter(writer, content);
+
+    // permissions
+    writePermissions(content, session, writer);
+
+    // Write the actual file.
+    if (content.hasProperty(SAKAI_LINK)) {
+      String linkPath = (String) content.getProperty(SAKAI_LINK);
+      writer.key("file");
+      try {
+        Content fileNode = contentManager.get(linkPath);
+        writeFileNode(fileNode, session, writer, 0, objectInProgress);
+      } catch (org.sakaiproject.nakamura.api.lite.accesscontrol.AccessDeniedException e) {
+        writer.value(false);
+      }
+    }
+    if (!objectInProgress){
+      writer.endObject();
+    }
+  }
+
+  public static void writeLinkNode(Content content,
       org.sakaiproject.nakamura.api.lite.Session session, JSONWriter writer)
       throws StorageClientException, JSONException {
     ContentManager contentManager = session.getContentManager();
@@ -309,6 +370,37 @@ public class FileUtils {
     writer.endObject();
   }
 
+  /**
+   * Writes comments of content
+   *
+   * @param node
+   * @param session
+   * @param write
+   * @throws RepositoryException
+   * @throws JSONException
+   */
+  public static void writeComments(Content content,
+      org.sakaiproject.nakamura.api.lite.Session session, JSONWriter writer)
+          throws StorageClientException, JSONException {
+    if (content == null) {
+      log.warn("Can't output comments of null content.");
+      return;
+    }
+    writer.key("comments");
+    writer.object();
+    Content commentContent = null;
+    try {
+      try {
+        commentContent = session.getContentManager().get(content.getPath() + "/comments");
+        ExtendedJSONWriter.writeContentTreeToWriter(writer, commentContent, true, 2); 
+      } catch (org.sakaiproject.nakamura.api.lite.accesscontrol.AccessDeniedException e) {
+        writer.value(false);
+      }
+    } finally {
+      writer.endObject();
+    }
+  }
+  
   /**
    * Gives the permissions for this user.
    *

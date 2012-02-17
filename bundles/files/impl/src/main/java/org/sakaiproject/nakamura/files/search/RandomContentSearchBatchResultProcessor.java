@@ -105,9 +105,6 @@ public class RandomContentSearchBatchResultProcessor extends LiteFileSearchBatch
         standardResults.add(result);
       }
     }
-    
-    // Add depth to include more information in the feed, like comments for a content
-    request.setAttribute("depth", 2);
 
     // choose random entries to return
     List<Result> retval = chooseRandomResults(priorityResults, originalItemsInt);
