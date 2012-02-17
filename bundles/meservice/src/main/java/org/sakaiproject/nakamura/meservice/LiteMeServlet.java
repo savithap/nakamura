@@ -50,7 +50,6 @@ import org.sakaiproject.nakamura.api.message.LiteMessagingService;
 import org.sakaiproject.nakamura.api.message.MessagingException;
 import org.sakaiproject.nakamura.api.messagebucket.MessageBucketException;
 import org.sakaiproject.nakamura.api.messagebucket.MessageBucketService;
-import org.sakaiproject.nakamura.api.profile.ProfileService;
 import org.sakaiproject.nakamura.api.search.solr.Query;
 import org.sakaiproject.nakamura.api.search.solr.Result;
 import org.sakaiproject.nakamura.api.search.solr.SolrSearchException;
@@ -64,6 +63,8 @@ import org.sakaiproject.nakamura.util.LitePersonalUtils;
 import org.sakaiproject.nakamura.util.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Joiner;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -137,13 +138,11 @@ public class LiteMeServlet extends SlingSafeMethodsServlet {
   protected transient ConnectionManager connectionManager;
 
   @Reference
-  protected transient ProfileService profileService;
-
-  @Reference
   private MessageBucketService messageBucketService;
 
   @Reference
   SolrSearchServiceFactory searchServiceFactory;
+
   @Reference
   BasicUserInfoService basicUserInfoService;
 
@@ -159,7 +158,6 @@ public class LiteMeServlet extends SlingSafeMethodsServlet {
     try {
       response.setContentType("application/json");
       response.setCharacterEncoding("UTF-8");
-      javax.jcr.Session jcrSession = request.getResourceResolver().adaptTo(javax.jcr.Session.class);
       final Session session = StorageClientUtils.adaptToSession(request
           .getResourceResolver().adaptTo(javax.jcr.Session.class));
       if (session == null) {
@@ -200,7 +198,7 @@ public class LiteMeServlet extends SlingSafeMethodsServlet {
 
       // Dump this user his info
       writer.key("profile");
-      ValueMap profile = profileService.getProfileMap(au,jcrSession);
+      ValueMap profile = new ValueMapDecorator(basicUserInfoService.getProperties(au));
       writer.valueMap(profile);
 
       // Dump this user his number of unread messages.
@@ -209,11 +207,11 @@ public class LiteMeServlet extends SlingSafeMethodsServlet {
 
       // Dump this user his number of contacts.
       writer.key("contacts");
-      writeContactCounts(writer, session, au, request);
+      writeContactCounts(writer, au, request);
 
       // Dump the groups for this user.
       writer.key("groups");
-      writeGroups(writer, session, au, jcrSession);
+      writeGroups(writer, session, au);
 
       writer.endObject();
     } catch (JSONException e) {
@@ -228,10 +226,6 @@ public class LiteMeServlet extends SlingSafeMethodsServlet {
       LOG.error("Failed to get a user his profile node in /system/me", e);
       response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
           "Access denied error.");
-    } catch (RepositoryException e) {
-      LOG.error("Failed to get a user his profile node in /system/me", e);
-      response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-          "Sparse storage client error.");
     } catch (MessagingException e) {
       LOG.error("Failed to get a user his message counts in /system/me", e);
       response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
@@ -254,7 +248,7 @@ public class LiteMeServlet extends SlingSafeMethodsServlet {
    * @throws AccessDeniedException
    * @throws RepositoryException
    */
-  protected void writeGroups(ExtendedJSONWriter writer, Session session, Authorizable au, javax.jcr.Session jcrSession)
+  protected void writeGroups(ExtendedJSONWriter writer, Session session, Authorizable au)
       throws JSONException, StorageClientException, AccessDeniedException {
     AuthorizableManager authorizableManager = session.getAuthorizableManager();
     writer.array();
@@ -298,8 +292,8 @@ public class LiteMeServlet extends SlingSafeMethodsServlet {
    * @throws SolrSearchException
    * @throws RepositoryException
    */
-  protected void writeContactCounts(ExtendedJSONWriter writer, Session session,
-      Authorizable au, SlingHttpServletRequest request) throws JSONException, SolrSearchException {
+  protected void writeContactCounts(ExtendedJSONWriter writer, Authorizable au,
+      SlingHttpServletRequest request) throws JSONException, SolrSearchException {
     writer.object();
 
     // We don't do queries for anonymous users. (Possible ddos hole).
@@ -569,11 +563,8 @@ public class LiteMeServlet extends SlingSafeMethodsServlet {
             result.put(propName, values[0]);
             break;
           default: {
-            StringBuilder valueString = new StringBuilder("");
-            for (int i = 0; i < values.length; i++) {
-              valueString.append("," + values[i]);
-            }
-            result.put(propName, valueString.toString().substring(1));
+            String valueString = Joiner.on(',').join(values);
+            result.put(propName, valueString);
           }
           }
         } else {

@@ -100,7 +100,14 @@ public abstract class LiteAbstractSakaiGroupPostServlet extends
       boolean changed = false;
 
       AuthorizableManager authorizableManager = session.getAuthorizableManager();
-      Joinable groupJoin = AuthorizableUtil.getJoinable(group, authorizableManager);
+      Joinable groupJoin = Joinable.no;
+      Session adminSession = null;
+      try {
+        adminSession = getSession();
+        AuthorizableUtil.getJoinable(group, adminSession.getAuthorizableManager());
+      } finally {
+        ungetSession(adminSession);
+      }
 
       // the group's count of members changed
       this.authorizableCountChanger.notify(UserConstants.GROUP_MEMBERS_PROP, group.getId());
@@ -123,7 +130,7 @@ public abstract class LiteAbstractSakaiGroupPostServlet extends
           if(!User.ADMIN_USER.equals(session.getUserId()) && !User.ANON_USER.equals(session.getUserId())
               && Joinable.yes.equals(groupJoin)
               && memberId.equals(session.getUserId())) {
-            Session adminSession = getSession();
+            adminSession = getSession();
             try{
               AuthorizableManager adminAuthorizableManager = adminSession.getAuthorizableManager();
               adminAuthorizableManager.updateAuthorizable(group);
@@ -160,7 +167,7 @@ public abstract class LiteAbstractSakaiGroupPostServlet extends
                 && !hasWriteAccess(memberAuthorizable, authorizable, session)){
               LOGGER.debug("Is Joinable {} {} ",groupJoin,session.getUserId());
               //we can grab admin session since group allows all users to join
-              Session adminSession = getSession();
+              adminSession = getSession();
               try{
                 AuthorizableManager adminAuthorizableManager = adminSession.getAuthorizableManager();
                 Group adminAuthGroup = (Group) adminAuthorizableManager.findAuthorizable(group.getId());

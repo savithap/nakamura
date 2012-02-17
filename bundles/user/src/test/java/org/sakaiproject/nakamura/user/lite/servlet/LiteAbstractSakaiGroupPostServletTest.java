@@ -106,6 +106,8 @@ public class LiteAbstractSakaiGroupPostServletTest {
     };
 
     servlet.authorizableCountChanger = authorizableCountChanger;
+    servlet.repository = repository;
+
   }
 
 
@@ -189,10 +191,7 @@ public class LiteAbstractSakaiGroupPostServletTest {
     when(request.getRemoteUser()).thenReturn("ieb");
     when(request.getParameterValues(":member")).thenReturn(
         new String[] { "ieb" });
-    
-    servlet.repository = repository;  
-    
-    
+
     ArrayList<Modification> changes = new ArrayList<Modification>();
     
     Map<String, Object> toSave = Maps.newLinkedHashMap();

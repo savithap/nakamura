@@ -108,7 +108,7 @@ public class LiteUpdateSakaiGroupServletTest  {
     servlet.eventAdmin = Mockito.mock(EventAdmin.class);
     servlet.postProcessorService = authorizablePostProcessService;
     servlet.authorizableCountChanger = authorizableCountChanger;
-
+    servlet.repository = repository;
   }
 
   @Test

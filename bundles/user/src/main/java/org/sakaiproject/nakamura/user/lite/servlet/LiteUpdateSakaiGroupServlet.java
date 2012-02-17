@@ -184,7 +184,7 @@ public class LiteUpdateSakaiGroupServlet extends LiteAbstractSakaiGroupPostServl
    *
    */
   @Reference
-  private transient Repository repository;
+  protected transient Repository repository;
 
   /**
    * Used to launch OSGi events.
