@@ -228,27 +228,8 @@ public class FileUtils {
   public static void writeFileNode(Content content,
       org.sakaiproject.nakamura.api.lite.Session session, JSONWriter write, int maxDepth)
       throws JSONException, StorageClientException {
-    if (content == null) {
-      log.warn("Can't output null content.");
-      return;
-    }
-
-    write.object();
-
-    // dump all the properties.
-    ExtendedJSONWriter.writeContentTreeToWriter(write, content, true, maxDepth);
-    // The permissions for this session.
-    writePermissions(content, session, write);
-
-    write.key(JcrConstants.JCR_LASTMODIFIED);
-    Calendar cal = new GregorianCalendar();
-    cal.setTimeInMillis(StorageClientUtils.toLong(content.getProperty(Content.LASTMODIFIED_FIELD)));
-    write.value(DateUtils.iso8601(cal));
-    write.key(JcrConstants.JCR_MIMETYPE);
-    write.value(content.getProperty(Content.MIMETYPE_FIELD));
-    write.key(JcrConstants.JCR_DATA);
-    write.value(StorageClientUtils.toLong(content.getProperty(Content.LENGTH_FIELD)));
-    write.endObject();
+    
+    writeFileNode(content, session, write, maxDepth, false);
   }
   
   public static void writeFileNode(Content content,
@@ -263,7 +244,7 @@ public class FileUtils {
       write.object();
     }
     // dump all the properties.
-    ExtendedJSONWriter.writeContentTreeToWriter(write, content, objectInProgress, maxDepth);
+    ExtendedJSONWriter.writeContentTreeToWriter(write, content, true, maxDepth);
     // The permissions for this session.
     writePermissions(content, session, write);
 
