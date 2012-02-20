@@ -313,7 +313,7 @@ public class FileUtils {
       writer.key("file");
       try {
         Content fileNode = contentManager.get(linkPath);
-        writeFileNode(fileNode, session, writer, 0, objectInProgress);
+        writeFileNode(fileNode, session, writer);
       } catch (org.sakaiproject.nakamura.api.lite.accesscontrol.AccessDeniedException e) {
         writer.value(false);
       }
@@ -326,29 +326,8 @@ public class FileUtils {
   public static void writeLinkNode(Content content,
       org.sakaiproject.nakamura.api.lite.Session session, JSONWriter writer)
       throws StorageClientException, JSONException {
-    ContentManager contentManager = session.getContentManager();
 
-    writer.object();
-
-    // Write all the properties.
-    ExtendedJSONWriter.writeNodeContentsToWriter(writer, content);
-
-    // permissions
-    writePermissions(content, session, writer);
-
-    // Write the actual file.
-    if (content.hasProperty(SAKAI_LINK)) {
-      String linkPath = (String) content.getProperty(SAKAI_LINK);
-      writer.key("file");
-      try {
-        Content fileNode = contentManager.get(linkPath);
-        writeFileNode(fileNode, session, writer);
-      } catch (org.sakaiproject.nakamura.api.lite.accesscontrol.AccessDeniedException e) {
-        writer.value(false);
-      }
-    }
-
-    writer.endObject();
+    writeLinkNode(content, session, writer, false);
   }
 
   /**
