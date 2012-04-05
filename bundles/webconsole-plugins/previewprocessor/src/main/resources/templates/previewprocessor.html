@@ -1,0 +1,15 @@
+<!-- header with Preview Processor options -->
+<div class='ui-widget-header ui-corner-top buttonGroup'>
+  <form action='previewprocessor' method='post'>
+    <label>${label_content_trigger_previewprocessor}:</label>
+    <select id='type' name='type'>
+      <option value='enter_content'>${label_enter_content}</option>
+      <option value='all'>${label_all}</option>
+    </select>
+    <input id='content_ids' name='content_ids'/>
+    <input type='submit' class='reloadButton ui-state-default ui-corner-all' style='min-width: 8em;' value='Run Preview Processor'/>
+  </form>
+</div>
+
+
+<!-- output below -->
