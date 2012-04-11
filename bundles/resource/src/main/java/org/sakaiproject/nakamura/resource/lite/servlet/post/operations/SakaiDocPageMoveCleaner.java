@@ -131,17 +131,40 @@ public class SakaiDocPageMoveCleaner implements MoveCleaner {
   private List<Modification> handleMessageStore(String fromPath, String toPath,
       String widgetPath, ContentManager cm) throws AccessDeniedException,
       StorageClientException {
-    Content widget = cm.get(widgetPath);
     List<Modification> mods = Lists.newArrayList();
 
-    // check for a name that starts with id* and a path to the message
-    if (widget.hasProperty(MESSAGESTORE_PROP)) {
-      String messagestore = String.valueOf(widget.getProperty(MESSAGESTORE_PROP));
-      String newMessageStore = StringUtils.replace(messagestore, fromPath, toPath);
-      if (!messagestore.equals(newMessageStore)) {
-        widget.setProperty(MESSAGESTORE_PROP, newMessageStore);
-        cm.update(widget);
-        mods.add(Modification.onModified(toPath + "/" + MESSAGESTORE_PROP));
+    if (widgetPath.contains("/discussion")){
+      Iterator<Content> it = cm.get(widgetPath+"/message/inbox").listChildren().iterator();
+      while(it.hasNext()){
+        Content topic = it.next();
+        if (topic.hasProperty(MESSAGESTORE_PROP)){
+          String messagestore = String.valueOf(topic.getProperty(MESSAGESTORE_PROP));
+          String newMessageStore = StringUtils.replace(messagestore, fromPath, toPath);
+          if (!messagestore.equals(newMessageStore)) {
+            topic.setProperty(MESSAGESTORE_PROP, newMessageStore);
+            //Also move values for sakai:to and sakai:writeto properties
+            String toProperty = String.valueOf(topic.getProperty(TO_PROP));
+            String writetoProperty = String.valueOf(topic.getProperty(WRITETO_PROP));
+            topic.setProperty(TO_PROP, StringUtils.replace(toProperty, fromPath, toPath));
+            topic.setProperty(WRITETO_PROP, StringUtils.replace(writetoProperty, fromPath, toPath));
+            cm.update(topic);
+            mods.add(Modification.onModified(topic.getPath() + "/" + MESSAGESTORE_PROP));
+            mods.add(Modification.onModified(topic.getPath() + "/" + TO_PROP));
+            mods.add(Modification.onModified(topic.getPath() + "/" + WRITETO_PROP));
+          }
+        }
+      }
+    } else {
+      Content widget = cm.get(widgetPath);
+      // check for a name that starts with id* and a path to the message
+      if (widget.hasProperty(MESSAGESTORE_PROP)) {
+        String messagestore = String.valueOf(widget.getProperty(MESSAGESTORE_PROP));
+        String newMessageStore = StringUtils.replace(messagestore, fromPath, toPath);
+        if (!messagestore.equals(newMessageStore)) {
+          widget.setProperty(MESSAGESTORE_PROP, newMessageStore);
+          cm.update(widget);
+          mods.add(Modification.onModified(toPath + "/" + MESSAGESTORE_PROP));
+        }
       }
     }
     return mods;
